@@ -82,5 +82,6 @@ RUN chmod -R 555 ./
 WORKDIR /
 
 RUN /bin/sh ./scripts/buildLinuxDist.sh ubuntu
-
-ENTRYPOINT ["/bin/sh", "-c"]
+EXPOSE 8080
+# ENTRYPOINT ["/bin/sh", "-c"]
+ENTRYPOINT [ "python3", "/arelleCmdLine.py -–webserver locahost:8080 --plugins 'EdgarRenderer' --disclosureSystem efm-pragmatic"  ]
