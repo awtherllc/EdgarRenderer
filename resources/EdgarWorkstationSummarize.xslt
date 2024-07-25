@@ -66,13 +66,16 @@
   <xsl:param name="includeLogs">true</xsl:param>
   <xsl:param name="includeExcel">true</xsl:param>
   <xsl:param name="accessionNumber">PROVIDED-BY-ARELLE-FILE-ARGUMENT-OBJECT</xsl:param>
+  <xsl:param name="title">View Filing Data</xsl:param>
   <xsl:variable name="includeDir">include</xsl:variable>
   <xsl:variable name="imagesDir">Images</xsl:variable>
-  <xsl:variable name="ixHtmlPath">ixviewer/ix.html</xsl:variable>
+  <xsl:variable name="ixHtmlPath">ixviewer-plus/ix.xhtml</xsl:variable>
 
+  <xsl:variable name="docAbsPathPrefix"></xsl:variable>
+  <xsl:variable name="docAbsPathSuffix"></xsl:variable>
   <xsl:variable name="fetchprefix"><![CDATA[DisplayDocument.do?step=docOnly&accessionNumber=]]></xsl:variable>
   <xsl:variable name="fetch_ix_prefixquoted"><![CDATA[../DisplayDocument.do%3Fstep%3DdocOnly%26accessionNumber%3D]]></xsl:variable>
-  <xsl:variable name="fetchsuffix"><![CDATA[&interpretedFormat=true&redline=false&filename=]]></xsl:variable>  
+  <xsl:variable name="fetchsuffix"><![CDATA[&interpretedFormat=true&redline=false&filename=]]></xsl:variable>
   <xsl:variable name="fetchsuffixquoted"><![CDATA[%26interpretedFormat%3Dtrue%26redline%3Dfalse%26filename%3D]]></xsl:variable>
   <xsl:variable name="fetchraw"><![CDATA[&interpretedFormat=false&redline=false&filename=]]></xsl:variable>
   <xsl:variable name="filingDocUrlPrefix" select="concat($fetchprefix, $accessionNumber, $fetchsuffix)"/>
@@ -81,4 +84,3 @@
   <xsl:variable name="fetchWrapsXmlInHtml">true</xsl:variable>
   <xsl:include href="Summarize_Common.xslt"/>
 </xsl:stylesheet>
-

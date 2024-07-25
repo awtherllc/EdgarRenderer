@@ -3,7 +3,7 @@
 :mod:`EdgarRenderer.Xlout`
 ~~~~~~~~~~~~~~~~~~~
 Edgar(tm) Renderer was created by staff of the U.S. Securities and Exchange Commission.
-Data and content created by government employees within the scope of their employment 
+Data and content created by government employees within the scope of their employment
 are not subject to domestic copyright protection. 17 U.S.C. 105.
 """
 """
@@ -13,7 +13,8 @@ At this moment, Xlout.py requires openpyxl 2.1.4, it does not work with openpyxl
 
 """
 
-import os.path, re, datetime, time, lxml, decimal, collections, openpyxl.cell, openpyxl.styles, openpyxl.utils, openpyxl.worksheet.dimensions
+import os.path, datetime, time, lxml, decimal, collections, openpyxl.cell, openpyxl.styles, openpyxl.utils, openpyxl.worksheet.dimensions
+import regex as re
 from . import IoManager
 from lxml.etree import tostring as treeToString
 
@@ -26,7 +27,7 @@ wordInNumPattern = re.compile(r"\s*([_A-Za-z\xC0-\xD6\xD8-\xF6\xF8-\xFF\u0100-\u
                               r"\s*([$€¥£]\s*)?[(]?\s*[+-]?[0-9,]+([.][0-9]*)?[)-]?\s*$")
 dateTimePattern = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-2][0-9]:[0-6][0-9]:[0-6][0-9]$")
 datePattern = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
-forbiddenChars = re.compile('[\\*?:/\[\]]')
+forbiddenChars = re.compile(r'[\\*?:/\[\]]')
 
 OUTPUT_FILE_NAME = "Financial_Report.xlsx"
 
@@ -57,7 +58,7 @@ class XlWriter(object):
         del self.simplified_transform
 
 
-    def save(self):
+    def save(self, suffix="", zipDir=""):
         if len(self.wb.worksheets)>1:
             self.wb.remove(self.wb.worksheets[0])
         if not (self.controller.reportZip or self.outputFolderName is not None):
@@ -66,13 +67,14 @@ class XlWriter(object):
         file = io.BytesIO()
         self.wb.save(file)
         file.seek(0)
+        outputFileName = OUTPUT_FILE_NAME + suffix
         if self.controller.reportZip:
-            self.controller.reportZip.writestr(OUTPUT_FILE_NAME, file.read())
+            self.controller.reportZip.writestr(zipDir + outputFileName, file.read())
         else:
-            self.controller.writeFile(os.path.join(self.outputFolderName, OUTPUT_FILE_NAME), file.read())
+            self.controller.writeFile(os.path.join(self.outputFolderName, outputFileName), file.read())
         file.close()
         del file  # dereference
-        self.controller.renderedFiles.add(OUTPUT_FILE_NAME)
+        self.controller.renderedFiles.add(outputFileName)
         self.controller.logDebug('Excel output saved {}'.format(self.controller.entrypoint),file=os.path.basename(__file__))
 
 
@@ -191,7 +193,7 @@ class XlWriter(object):
                         if tag == 'th':
                             alignHorizontal = 'center'
                             alignVertical = 'center'
-                            
+
                         # set style all at once (see http://openpyxl.readthedocs.org/en/latest/styles.html)
                         if (fontBold or wrapText or fmt != "General" or alignHorizontal != "general" or alignVertical != "bottom"):
                             if getattr(openpyxl, "__version__", "unknown") >= "2.2.0":
@@ -203,7 +205,7 @@ class XlWriter(object):
                                                    # HF causes crash ,number_format=fmt
                                                    )
                             cell.number_format = fmt
-                        try:   
+                        try:
                             currentWidth =  ws.column_dimensions[colLetter].width
                             w = len(text) + 1
                             if unitSymbol:
@@ -213,17 +215,17 @@ class XlWriter(object):
                                     else: w += n * 1.3
                                 w += 2 # assure room for unit negative numbers and padding
                             newWidth = min(int(w) * widthPerCharacter,maxWidth)
-                            ws.column_dimensions[colLetter].width = newWidth if currentWidth is None else max(currentWidth,newWidth)                                   
+                            ws.column_dimensions[colLetter].width = newWidth if currentWidth is None else max(currentWidth,newWidth)
                         except Exception as ex:
                             #message = ErrorMgr.getError('CANNOT_ADJUST_WIDTH').format(cell,colLetter, ex)
                             self.controller.logDebug(("Internal error in worksheet generation: {} could not adjust width on column {}: {}").format(
                                                       cell, colLetter, ex), file='Xlout.py', messageCode="debug")
                         return cell
-                        
+
                     mergedAreas = {}  # colNumber: (colspan,lastrow)
                     for rowNum, trElt in enumerate(tableElt.iterchildren(tag="tr")):
                         # remove passed mergedAreas
-                        for mergeCol in [col 
+                        for mergeCol in [col
                                          for col, mergedArea in mergedAreas.items()
                                          if rowNum >= mergedArea[1]]:  # rowNum is 0-based, row is 1-based
                             del mergedAreas[mergeCol]
@@ -266,7 +268,7 @@ class XlWriter(object):
 
 def tryExtractingTextNodes(text):
     # if the string looks like HTML, and it can be parsed, then
-    # strip out all the tags 
+    # strip out all the tags
     # collapse all whitespace but preserve one newline whenever one appears
     # in whitespace except at the beginning and end.
     # Otherwise return None.
@@ -288,4 +290,4 @@ def tryExtractingTextNodes(text):
             return None
     return None # from tryExtractingTextNodes
 
-    
+

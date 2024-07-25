@@ -3,11 +3,12 @@
 :mod:`EdgarRenderer.RefManager`
 ~~~~~~~~~~~~~~~~~~~
 Edgar(tm) Renderer was created by staff of the U.S. Securities and Exchange Commission.
-Data and content created by government employees within the scope of their employment 
+Data and content created by government employees within the scope of their employment
 are not subject to domestic copyright protection. 17 U.S.C. 105.
 """
 
-import os.path, re, lxml, time
+import os.path, lxml, time
+import regex as re
 import arelle.ModelDocument
 from arelle.FileSource import openFileSource
 
@@ -30,7 +31,7 @@ class RefManager(object):
     # method getUrls on CntlrAddOnManager
     # returns: set of strings representing additional linkbases to be loaded.
     # return the set of URLs that must be loaded due to the presence of schemas in the DTS.
-    def getUrls(self,modelXbrl): 
+    def getUrls(self,modelXbrl):
         urls = set()
         from urllib.parse import urlparse,urljoin
         namespacesInFacts = {f.qname.namespaceURI for f in modelXbrl.facts if f.qname is not None}
@@ -38,7 +39,7 @@ class RefManager(object):
             if doc.targetNamespace in namespacesInFacts:
                 parsedUri = urlparse(fileUri)
                 fileBasename = os.path.basename(parsedUri.path)
-                if re.compile('.*\.xsd$').match(fileBasename): # Assume we only care about urls ending in .xsd
+                if re.compile(r'.*\.xsd$').match(fileBasename): # Assume we only care about urls ending in .xsd
                     xp = "/TaxonomyAddonManager/TaxonomyList/TaxonomyAddon[Taxonomy[.='" + fileBasename + "']]/*/string"
                     moreUrls = self.tree.xpath(xp)
                     for u in moreUrls:

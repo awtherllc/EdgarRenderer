@@ -3,10 +3,11 @@
 :mod:`EdgarRenderer.Utils`
 ~~~~~~~~~~~~~~~~~~~
 Edgar(tm) Renderer was created by staff of the U.S. Securities and Exchange Commission.
-Data and content created by government employees within the scope of their employment 
+Data and content created by government employees within the scope of their employment
 are not subject to domestic copyright protection. 17 U.S.C. 105.
 """
-import re, sys, math, logging
+import sys, math, logging
+import regex as re
 import arelle.XbrlConst
 
 durationStartRoleError = "durationStartRoleError"  # fake role URI to indicate that a periodStart label role was put on a duration concept.
@@ -42,8 +43,8 @@ efmStandardAuthorities = ["sec.gov", "fasb.org", "xbrl.org", "xbrl.us", "w3.org"
 def isRate(fact, filing):
     return   (isFactTypeEqualToOrDerivedFrom(fact, isPercentItemTypeQname) or
              (isFactTypeEqualToOrDerivedFrom(fact, isPureItemTypeQname) and
-                (isEfmInvestNamespace(fact.qname.namespaceURI) or filing.isRR)) or
-             (fact.unit is not None and fact.unit.isSingleMeasure and 
+                (isEfmInvestNamespace(fact.qname.namespaceURI) or filing.isRRorOEF)) or
+             (fact.unit is not None and fact.unit.isSingleMeasure and
               any(utrEntry.unitId == 'Rate' for utrEntry in fact.utrEntries.copy())))
 
 def printErrorStringToDisambiguateEmbeddedOrNot(embeddedCommandFact):
@@ -73,14 +74,16 @@ def booleanFromString(x):
     else:
         return (x.casefold() == "true")
 
-isImageRegex = re.compile('.*\.(jpg|gif|png)$')
-isXmlRegex = re.compile('.*\.x(ml|sd)')
-isEfmRegex = re.compile('.*[0-9]{8}((_(cal|def|lab|pre))?\.xml|\.xsd)$')
-isInlineRegex = re.compile('.*\.htm$')
-isZipRegex = re.compile('.*\.zip$')
-isHttpRegex = re.compile('^http(s)?://.*')
+isImageRegex = re.compile(r'.*\.(jpg|gif|png)$')
+isXmlRegex = re.compile(r'.*\.x(ml|sd)')
+isEfmRegex = re.compile(r'.*[0-9]{8}((_(cal|def|lab|pre))?\.xml|\.xsd)$')
+isInlineRegex = re.compile(r'.*\.htm$')
+isZipRegex = re.compile(r'.*\.zip$')
+isHttpRegex = re.compile(r'^http(s)?://.*')
+isSecNamespaceRegex = re.compile(r'^http(s)?://xbrl.sec.gov/.*')
 isEfmStandardNamespaceRegex = re.compile('^http(s)?://.*(' + "|".join(efmStandardAuthorities) + ")/.*")
 isEfmInvestNamespaceRegex = re.compile('^http(s)?://.*(' + "|".join(efmStandardAuthorities) + ")/invest.*")
+isBarChartFactRegex = re.compile(r'^\{http://xbrl.sec.gov/(?P<family>rr|oef)/.*\}AnnualReturn(?P<year>[0-9]{4})')
 
 def isImageFilename(path):
     return isImageRegex.match(path) and True
@@ -123,6 +126,19 @@ def hasCustomNamespace(thing):
             if hasattr(thing, a):
                 return hasCustomNamespace(getattr(thing, a))
     return False
+
+isRoleNotRenderedRegex = re.compile(r'^https?://xbrl.sec.gov/.*/notRendered$')
+isElementNotRenderedRegex = re.compile(r'^\{http://xbrl.sec.gov/ffd/.*\}OffsetClmdInd$')
+
+def isNotRendered(factOrRole):
+    if type(factOrRole) == str:
+        return bool(re.match(isRoleNotRenderedRegex,factOrRole))
+    elif type(factOrRole) == arelle.ModelInstanceObject.ModelInlineFact:
+        return bool(re.match(isElementNotRenderedRegex,factOrRole.qname.clarkNotation))
+    return False
+
+ffdDisclaimerStyle = "color:rgb(12,33,58); margin-top: 5pt; font-family:'Segoe UI', Frutiger, 'Frutiger Linotype', 'Dejavu Sans', 'Helvetica Neue', Arial, sans-serif;"
+ffdDisclaimerText = "Text of disclaimer goes here."
 
 def xbrlErrors(modelXbrl):
     """Returns the list of messages in modelXbrl whose levelno is at least ERROR, assuming there is a buffer handler present."""
@@ -175,7 +191,7 @@ def handleDuration(valueStr):
                        (None if matchObj.group('s') is None else Decimal(matchObj.group('s')), 'second')]
 
         # this section is to inteligently handle zeros.  if a duration has a zero and other numbers, ignore the zeros.
-        # So, P0Y1M is just one month.  if they're all zeros, just print the biggest so P0Y0M and P0Y both print 0 years.        
+        # So, P0Y1M is just one month.  if they're all zeros, just print the biggest so P0Y0M and P0Y both print 0 years.
         numStrsSet = {tup[0] for tup in orderedList}
         allZeroOrNone = numStrsSet <= {Decimal(0), None}
         someZeroSomeNot = not allZeroOrNone and Decimal(0) in numStrsSet
@@ -210,18 +226,18 @@ def handleDuration(valueStr):
     # regex besides 'P' has a '?' after it, meaning that it may or may not actually be there.  so, lookAhead1 says that
     # something needs to follow P.
 
-    # lookAhead2 makes sure that something comes after T, because again in the non-look-ahead part of the regex, 
+    # lookAhead2 makes sure that something comes after T, because again in the non-look-ahead part of the regex,
     # everything after T is optional.
 
     # so lookahead 1 and 2 are basically conditions, and the rest of the regex actually consumes the xs:duration pattern.
 
-    lookAhead1 = '(?=(\d+Y|\d+M|\d+D|T\d+H|T\d+M|T(\d+|\d+\.\d+)S))'
-    lookAhead2 = '(?=(\d+H|\d+M|(\d+|\d+\.\d+)S))'
-    beforeT = '(?P<minus>-?)P' + lookAhead1 + '((?P<y>\d+)Y)?((?P<mon>\d+)M)?((?P<d>\d+)D)?'
-    TAndAfter = '(T' + lookAhead2 + '((?P<h>\d+)H)?((?P<min>\d+)M)?((?P<s>\d+|\d+\.\d+)S)?)?'
+    lookAhead1 = r'(?=(\d+Y|\d+M|\d+D|T\d+H|T\d+M|T(\d+|\d+\.\d+)S))'
+    lookAhead2 = r'(?=(\d+H|\d+M|(\d+|\d+\.\d+)S))'
+    beforeT = r'(?P<minus>-?)P' + lookAhead1 + r'((?P<y>\d+)Y)?((?P<mon>\d+)M)?((?P<d>\d+)D)?'
+    TAndAfter = r'(T' + lookAhead2 + r'((?P<h>\d+)H)?((?P<min>\d+)M)?((?P<s>\d+|\d+\.\d+)S)?)?'
 
     # probably don't need to strip with fact.xValue?
-    return re.sub(re.compile(beforeT + TAndAfter), durationPrettyPrint, valueStr.strip()) 
+    return re.sub(re.compile(beforeT + TAndAfter), durationPrettyPrint, valueStr.strip())
 
 
 def strFactValue(fact, preferredLabel=None, filing=None, report=None):
@@ -270,7 +286,7 @@ def strFactValue(fact, preferredLabel=None, filing=None, report=None):
 
 def prettyPrintQname(localName):
     # \g<1> will match to the char that matched ([a-z]) and similarly for \g<2>.
-    return re.sub('([a-z])([A-Z0-9])', '\g<1> \g<2>', localName)
+    return re.sub(r'([a-z])([A-Z0-9])', r'\g<1> \g<2>', localName)
 
 
 def isTypeQnameDerivedFrom(modelXbrl, typeQname, predicate):
@@ -401,7 +417,7 @@ class RenderingException(Exception):
         self.args = ( self.__repr__(), )
     def __repr__(self):
         return _('[{0}] exception {1}').format(self.code, self.message)
-    
+
 class Errmsg(object):
     def __init__(self, messageCode, message):
         self.msgCode = messageCode

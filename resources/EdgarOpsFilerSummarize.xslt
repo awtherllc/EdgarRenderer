@@ -10,13 +10,16 @@
   <xsl:param name="processXsltInBrowser">false</xsl:param>
   <xsl:param name="includeLogs">true</xsl:param>
   <xsl:param name="includeExcel">true</xsl:param>
+  <xsl:param name="title">View Filing Data</xsl:param>
   <xsl:variable name="includeDir">/include</xsl:variable>
   <xsl:variable name="imagesDir">/images</xsl:variable>
-  <xsl:variable name="ixHtmlPath">/ixviewer/ix.html</xsl:variable>
+  <xsl:variable name="ixHtmlPath">/ixviewer-plus/ix.xhtml</xsl:variable>
 
+  <xsl:variable name="docAbsPathPrefix"></xsl:variable>
+  <xsl:variable name="docAbsPathSuffix"></xsl:variable>
   <xsl:variable name="fetchprefix">/ft/viewexhibitfiler.html?filename=</xsl:variable>
   <xsl:variable name="fetch_ix_prefixquoted"><![CDATA[/ft/viewexhibitfiler.html?filename=]]></xsl:variable>
-  <xsl:variable name="fetchsuffix"></xsl:variable>  
+  <xsl:variable name="fetchsuffix"></xsl:variable>
   <xsl:variable name="fetchsuffixquoted"><![CDATA[&amp;redline=false&amp;file=]]></xsl:variable>
   <xsl:variable name="fetchraw"><![CDATA[&amp;redline=false&amp;file=]]></xsl:variable>
   <xsl:variable name="filingDocUrlPrefix" select="$fetchprefix"/>
@@ -25,4 +28,3 @@
   <xsl:variable name="fetchWrapsXmlInHtml"></xsl:variable>
   <xsl:include href="Summarize_Common.xslt"/>
 </xsl:stylesheet>
-
