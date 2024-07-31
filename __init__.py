@@ -755,9 +755,10 @@ class EdgarRenderer(Cntlr.Cntlr):
         else: # options previously initialized
             self.copyReAttrOptions(options)
         # Transfer daemonCreatedFilders to this EdgarRenderer to deal with at filingEnd
-        if hasattr(options, "daemonCreatedFolders"):
-            self.createdFolders.extend(options.daemonCreatedFolders)
-            del options.daemonCreatedFolders # don't pass to any subsequent independent filing if any
+        #raise NotImplementedError("daemonCreatedFolders disabled due to bug")
+        # if hasattr(options, "daemonCreatedFolders"):
+        #     self.createdFolders.extend(options.daemonCreatedFolders)
+        #     del options.daemonCreatedFolders # don't pass to any subsequent independent filing if any
         mdlMgr = cntlr.modelManager
         self.disclosureSystem = mdlMgr.disclosureSystem
         self.validatedForEFM = ("esef" in self.disclosureSystem.names or # prevent EFM validation messages for "esef" validations
