@@ -15,7 +15,7 @@
   <xsl:param name="title">View Filing Data</xsl:param>
   <xsl:variable name="includeDir">/include</xsl:variable>
   <xsl:variable name="imagesDir">/images</xsl:variable>
-  <xsl:variable name="ixHtmlPath">/ix</xsl:variable>
+  <xsl:variable name="ixHtmlPath">/ix.html</xsl:variable>
   <!--  end of 24.0.1 temporary changes -->
   <xsl:variable name="docAbsPathPrefix">' + url_filing_dir +'</xsl:variable>
   <xsl:variable name="docAbsPathSuffix">' + '</xsl:variable>
